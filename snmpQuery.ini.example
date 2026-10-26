@@ -24,6 +24,16 @@ gateway=192.168.1.1
 community=public
 
 # ============================================================================
+# API ACCESS (Optional)
+# ============================================================================
+
+# API_TOKEN - static token for the programmatic JSON API (POST /command).
+# Any client calling /command must send this exact value in the X-API-Token
+# header. If this line is absent or empty, the /command endpoint is disabled
+# (returns 503). Use a long, random value, e.g.: openssl rand -hex 32
+API_TOKEN=change-me-to-a-long-random-string
+
+# ============================================================================
 # SWITCHES
 # ============================================================================
 # List all switches you want to monitor

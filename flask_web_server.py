@@ -47,6 +47,7 @@ import sqlite3
 from datetime import datetime
 import pathlib
 import funciones
+from api_command import api_bp
 
 # ============================================================================
 # CONFIGURATION
@@ -59,6 +60,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Programmatic JSON API (token-protected POST /command). See api_command.py.
+app.register_blueprint(api_bp)
 
 # Paths - ADJUST THESE to match your setup
 RAMDISK_DB = "/ramdisk/snmpqserver.db"
@@ -160,7 +164,7 @@ def interpretarDireccion(cmd):
             pass
     
     # 2. Is it a full MAC?
-    posibleMac = funciones.sanitizeMac(cmd)
+    posibleMac = funciones.sanitizeMAC(cmd)
     mac_address_std = funciones.standarizeFullMAC(posibleMac)
     if mac_address_std:
         return ("mac", (mac_address_std,))

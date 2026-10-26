@@ -207,6 +207,58 @@
 
 
 
+
+
+
+    {% elif query_type == 'macswitch' %}
+        <!--MAC SWITCH RESULT .................................................................................... -->
+        {% set devices, aps = result %}
+
+
+
+
+
+
+        {% if devices %}
+
+
+        <div class="space-y-2">
+            {% set state = namespace(current_switch=None, current_port=None) %}
+
+            {% for dev in devices %}
+                {% set timestamp, switch_ip, port, mac, vlan, ip, vendor, hostname, location, switch_mac = dev %}
+
+                {% if switch_ip != state.current_switch %}
+                    {% set state.current_switch = switch_ip %}
+                    {% set state.current_port = None %}
+                    <!-- Switch line -->
+
+                    <div class="font-semibold mb-1">
+                        <span class="text-lg font-semibold mb-3">Switch </span>
+                        <span class="swip">{{ switch_ip }} </span>
+                        <span class="text-lg font-semibold mb-3"> Sees </span>
+                        <span class="mac font-mono">[{{ mac }}] </span>
+                        <span class="text-lg font-semibold mb-3"> on </span>
+                        <span class="port"><u>PORT {{ port }}</u></span>
+                        <span class="text-lg font-semibold mb-3">, in </span>
+                        <span class="vlan">VLAN {{ vlan }} </span>
+                    </div>
+
+
+                    ---------------------------------------------------------------------
+
+                {% endif %}
+                </br>
+                <span class="text-lg font-semibold mb-3">Results from {{ format_timestamp(timestamp) }}</span>
+
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <p class="text-gray-400">No devices found.</p>
+        {% endif %}
+
+
         {% if aps %}
         <div class="mt-4 p-4 bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded">
             <p class="font-semibold mb-2">📡 Port shared with Access Point:</p>

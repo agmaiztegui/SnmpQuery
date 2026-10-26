@@ -865,15 +865,21 @@ def netsnmpSwitch(host, strategy):
                 text=True,
             )
             if proc.returncode == 0:
-                rawLines = []
+                rawLines1 = []
                 parte = ""
                 for line in proc.stdout.splitlines():
-                    if line.startswith(".1."):
-                        if(parte):
-                            rawLines.append(parte.strip())
-                        parte = line
-                    else:
-                        parte = parte + line.strip()
+                        if(line.startswith(".1.")):
+                            if(parte):
+                                rawLines1.append(parte.strip())
+                            parte = line
+                        else:
+                            parte = parte + line.strip()
+                rawLines1.append(parte.strip())
+                # In case OIDs don't exist, an error that says "No Such Object available on this agent at this OID"
+                rawLines = []
+                for cosa in rawLines1:
+                    if("No Such" not in cosa):
+                        rawLines.append(cosa)
                 for line in rawLines:
                     # Example:
                     # .1.3.6.1.2.1.31.1.1.1.1.12 = GigabitEthernet0/12
@@ -894,22 +900,22 @@ def netsnmpSwitch(host, strategy):
                         value = finalize_value(oid_tuple, value)
                         salida.append((oid_tuple, value))
                     except Exception as e:
-                        loguear(str(e))
-                        loguear(str(value_str))
+                        print(str(e))
+                        print(str(value_str))
                         cadena = ""
                         for cosa in oid_tuple:
                             cadena = cadena+"."+str(cosa)
-                        loguear("CADENA: "+cadena)
-                        loguear(traceback.format_exc())
+                        print("CADENA: "+cadena)
+                        print(traceback.format_exc())
             else:
                 pass
+                print(host+" OFFLINE!")
                 return -1
         except Exception as e:
             print(e)
             traceback.print_exc()
             return salida
     return salida
-
 
 
 
@@ -1246,7 +1252,7 @@ def fetch_oid_fast(parametros):
                 cantidad = row[0]
             if(cantidad > len(rows_to_insert4)*0.75):
                 test10 = True
-                condicionP2aP4 = "paso2.pIndex2 = paso3.pIndex4"
+                condicionP2aP4 = "paso2.pIndex2 = paso4.pIndex3"
             # Test 11~12: paso1 and paso3
             # TEST11:
             cantidad = 0

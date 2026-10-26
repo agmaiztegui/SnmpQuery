@@ -784,7 +784,7 @@ def status(elSwitchIP=None):
 # ---------------------------------------------------------------------------------------------------------------------
 
 
-def macSwitch(unaMac, unSwitch):
+def macSwitch2(unaMac, unSwitch):
     diskDB = sqlite3.connect("/ramdisk/snmpqserver.db", isolation_level=None)
     diskDB.execute("PRAGMA journal_mode=WAL;")
     diskDB.execute("PRAGMA synchronous=NORMAL;")
@@ -987,7 +987,77 @@ def macSearch(unaMac):
             )
         """, (elSwitch,elPuerto)):
         unAP.append(row2)
+    return devolver,unAP, None
+
+
+
+# --------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+
+
+def macSwitch(unaMac, unSwitch):
+    diskDB = sqlite3.connect("/ramdisk/snmpqserver.db", isolation_level=None)
+    diskDB.execute("PRAGMA journal_mode=WAL;")
+    diskDB.execute("PRAGMA synchronous=NORMAL;")
+    diskCur = diskDB.cursor()
+
+    # The MAC could be Whole or partial. We only know it has valid characters.
+    # standarizeFullMac returns None if not a Whole MAC.
+    
+    laMac = standarizeFullMAC(unaMac)
+    
+    if( laMac is not None ):
+        elWHERE = "WHERE macaddress.unaMac = ? AND switch.switchIP = '"+unSwitch+"'"
+    else:
+        elWHERE =  "WHERE macaddress.unaMac LIKE 'functionDisabled' AND switch.switchIP = '"+unSwitch+"'"
+        
+    elQuery = """
+        SELECT DISTINCT macaddress.stamp, macaddress.switchIP,
+            macaddress.unPuerto, macaddress.unaMAC, macaddress.unaVLAN,
+            arp.ipaddr, vendor.elVendor, hostname.hostname, switch.switchDesc, switch.switchMac
+        FROM macaddress LEFT JOIN arp ON macaddress.unaMAC = arp.macaddr
+            LEFT JOIN vendor ON macaddress.unaMAC LIKE vendor.halfMac || '%'
+            LEFT JOIN hostname ON arp.ipaddr = hostname.ipaddr
+            JOIN switch ON macaddress.switchIP = switch.switchIP """+elWHERE+"""
+            ORDER BY macaddress.switchIP, macaddress.unPuerto
+        """
+    # We want: SWITCH, MAC, VLAN, HOSTNAME, VENDOR
+    devolver = []
+    unAP = []
+    elSwitch = None
+    elPuerto = None
+    for row in diskCur.execute(elQuery, (laMac,)):
+        if(row[6] is None):
+            campoVENDOR = "N/A"
+        else:
+            campoVENDOR = row[6]
+        if(row[7] is None):
+            campoHOSTNAME = "N/A"
+        else:
+            campoHOSTNAME = row[7]
+        # AVAYA en el row[5] está la IP. Mando a ver si no es un teléfono interno!
+        telefono = extensionCheck(row[2], diskDB)
+        if(telefono is not None):
+            campoHOSTNAME = telefono
+        auxRow = row[:6] + (campoVENDOR,) + (campoHOSTNAME,) + row[8:]
+        devolver.append(auxRow)
+        elSwitch = row[1]
+        elPuerto = row[2]
+    # Let's search for Access Points on that port.
+    for row2 in diskCur.execute("""
+        SELECT apMac, apNombre
+        FROM accessPoints
+        WHERE apMac IN (
+            SELECT unaMac
+            FROM macaddress
+            WHERE switchIP = ?
+                AND unPuerto = ?
+            )
+        """, (elSwitch,elPuerto)):
+        # unAP.append(row2)
+        pass
     return devolver,unAP
+
 
 
 
